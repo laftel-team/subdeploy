@@ -60,6 +60,7 @@ class CoreServer {
       })
       connection.socket.on('close', () => {
         this.sockets.delete(connection.socket)
+        log(`${req.ip} is disconnected`)
       })
     })
   }

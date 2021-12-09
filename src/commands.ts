@@ -1,4 +1,6 @@
+import pm2 from 'pm2'
 import yargs from 'yargs'
+import path from 'path'
 
 export class StartCommand implements yargs.CommandModule {
   command = 'start <instance>'
@@ -7,7 +9,7 @@ export class StartCommand implements yargs.CommandModule {
   builder(args: yargs.Argv) {
     return args
       .positional('instance', {
-        choices: ['core', 'server'],
+        choices: ['core', 'client'],
         describe: 'Instance type to start',
         type: 'string',
       })
@@ -15,7 +17,29 @@ export class StartCommand implements yargs.CommandModule {
       .example('$0 start client', 'Starts the client instance')
   }
 
-  handler(args: yargs.Arguments) {}
+  handler(args: yargs.Arguments) {
+    const instance = args.instance as string
+    pm2.connect((err) => {
+      if (err) {
+        console.error(err)
+        process.exit(2)
+      }
+
+      pm2.start(
+        {
+          script: path.resolve(__dirname, `./index.${instance}.js`),
+          name: `subdeploy-${instance}`,
+        },
+        (err, apps) => {
+          if (err) {
+            console.error(err)
+            return pm2.disconnect()
+          }
+          pm2.disconnect()
+        }
+      )
+    })
+  }
 }
 
 export class StopCommand implements yargs.CommandModule {
@@ -25,7 +49,7 @@ export class StopCommand implements yargs.CommandModule {
   builder(args: yargs.Argv) {
     return args
       .positional('instance', {
-        choices: ['core', 'server'],
+        choices: ['core', 'client'],
         describe: 'Instance type to stop',
         type: 'string',
       })
@@ -33,7 +57,21 @@ export class StopCommand implements yargs.CommandModule {
       .example('$0 start client', 'Stops the client instance')
   }
 
-  handler(args: yargs.Arguments) {}
+  handler(args: yargs.Arguments) {
+    const instance = args.instance as string
+    pm2.connect((err) => {
+      if (err) {
+        console.error(err)
+        process.exit(2)
+      }
+      pm2.delete(`subdeploy-${instance}`, (err) => {
+        if (err) {
+          console.error(err)
+        }
+        pm2.disconnect()
+      })
+    })
+  }
 }
 
 export class LogCommand implements yargs.CommandModule {

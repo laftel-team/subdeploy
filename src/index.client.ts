@@ -3,8 +3,6 @@ import path from 'path'
 
 const envDir = path.join(process.cwd(), '.env')
 
-console.log(envDir)
-
 dotenv.config({ path: envDir })
 
 const { SUBDEPLOY_PORT, SUBDEPLOY_KEY, SUBDEPLOY_HOST } = process.env
