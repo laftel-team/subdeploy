@@ -2,13 +2,23 @@
 
 Subdeploy is a tool for deploying a service to multiple instances via subscription.
 
-> WIP
-
-## Installation
+### Installation
 
 ```bash
-npm install -g subdeploy
+$ npm install -g subdeploy
+$ subdeploy --help
 ```
+
+### Architecture
+
+![](https://i.imgur.com/Fh3GQQa.png)
+
+Subdeploy provides two type of instances.
+
+- Core: The core instance opens up a webserver with an API endpoint and websocket.
+- Client: The client instance connects to the core server with websocket.
+
+After establishing the connection between the core and the clients, you can invoke every clients to perform a specific task by making a request to the core.
 
 ### Configuration
 
@@ -31,44 +41,49 @@ cd ../
 echo Hello World
 ```
 
-Make sure to make the script executable.
+Make sure that the script is executable.
 
 ```bash
-chmod +x deploy-scripts/update
+$ chmod +x deploy-scripts/update
 ```
 
-### Running subdeploy core server
+### CLI
+
+To read the help for CLI commands, run:
 
 ```bash
-subdeploy start core
+$ subdeploy --help
 ```
 
-### Running subdeploy client
+#### Starting an instance
 
 ```bash
-subdeploy start client
+$ subdeploy start core
+$ subdeploy start client
 ```
 
-### Check logs
+#### Stopping an instance
 
 ```bash
-subdeploy log core
-subdeploy log client
+$ subdeploy stop core
+$ subdeploy stop client
 ```
 
-### Stopping core server or client
+#### Check status of the instances
 
 ```bash
-subdeploy stop core
-subdeploy stop client
+$ subdeploy status
 ```
 
-### Invoke each clients to execute deploy scripts
+#### Check logs of the instance
 
-Make a POST request to following URL
-
+```bash
+$ subdeploy log core
+$ subdeploy log client
 ```
-POST http://localhost:3000/exec?command=update&key=$SUBDEPLOY_KEY
-```
 
-> Fill $SUBDEPLOY_KEY with your own SUBDEPLOY_KEY.
+#### Invoke deploy script
+
+```bash
+$ subdeploy invoke $scriptName
+```

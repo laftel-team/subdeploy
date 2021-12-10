@@ -28,5 +28,8 @@
     "dev:core": "ts-node -T ./src/index.core.ts",
     "dev:client": "ts-node -T ./src/index.client.ts",
     "build": "tsc"
+  },
+  "bin": {
+    "subdeploy": "./dist/cli.js"
   }
 }
