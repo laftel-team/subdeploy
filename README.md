@@ -1,6 +1,6 @@
 # subdeploy
 
-Subdeploy is a tool for deploying a service to multiple instances via subscription.
+Sudeploy is a tool that allows you to deploy a service to multiple instances with a single request via subscription model.
 
 ### Installation
 
