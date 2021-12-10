@@ -1,6 +1,7 @@
 import CoreServer from './CoreServer'
 import dotenv from 'dotenv'
 import path from 'path'
+import { log } from './log'
 
 const envDir = path.join(process.cwd(), '.env')
 dotenv.config({ path: envDir })
@@ -16,3 +17,7 @@ const coreServer = new CoreServer({
 })
 
 coreServer.start()
+
+process.on('SIGINT', () => {
+  log('Closing server...')
+})

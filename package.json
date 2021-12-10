@@ -4,13 +4,18 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@types/axios": "^0.14.0",
     "@types/node": "^16.11.12",
+    "@types/tail": "^2.2.1",
     "@types/ws": "^8.2.2",
     "@types/yargs": "^17.0.7",
+    "axios": "^0.24.0",
     "dotenv": "^10.0.0",
     "fastify": "^3.24.1",
     "fastify-websocket": "^4.0.0",
     "pm2": "^5.1.2",
+    "table": "^6.7.5",
+    "tail": "^2.2.4",
     "typescript": "^4.5.2",
     "ws": "^8.3.0",
     "yargs": "^17.3.0"

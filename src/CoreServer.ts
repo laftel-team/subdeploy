@@ -25,13 +25,15 @@ class CoreServer {
   }
 
   setupRoutes() {
-    this.app.get<{ Querystring: ExecQuerystring }>(
+    this.app.post<{ Querystring: ExecQuerystring }>(
       '/exec',
       async (request, reply) => {
         if (request.query.key !== this.config.key) {
           reply.code(401)
           throw new Error('Invalid key')
         }
+
+        log(`Broadcast command: ${request.query.command}`)
 
         this.broadcast(request.query.command)
 

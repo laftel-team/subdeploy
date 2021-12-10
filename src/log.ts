@@ -1,3 +1,3 @@
 export function log(text: string) {
-  console.log(`[${new Date().toLocaleString()}] ${text}`)
+  console.log(`\x1b[2m[${new Date().toISOString()}]\x1b[0m ${text}`)
 }
