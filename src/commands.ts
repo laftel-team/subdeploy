@@ -110,7 +110,7 @@ export class LogCommand implements yargs.CommandModule {
 
         console.log(`\x1b[2m${logFile}\x1b[0m`)
         childProcess.spawn('tail', ['-f', logFile], {
-          detached: true,
+          detached: false,
           stdio: 'inherit',
         })
 
