@@ -78,6 +78,38 @@ export class StopCommand implements yargs.CommandModule {
   }
 }
 
+export class RestartCommand implements yargs.CommandModule {
+  command = 'restart <instance>'
+  describe = 'Restarts the instance'
+
+  builder(args: yargs.Argv) {
+    return args
+      .positional('instance', {
+        choices: ['core', 'client'],
+        describe: 'Instance type to stop',
+        type: 'string',
+      })
+      .example('$0 stop core', 'Restarts the core instance')
+      .example('$0 stop client', 'Restarts the client instance')
+  }
+
+  handler(args: yargs.Arguments) {
+    const instance = args.instance as string
+    pm2.connect((err) => {
+      if (err) {
+        console.error(err)
+        process.exit(2)
+      }
+      pm2.restart(`subdeploy-${instance}`, (err) => {
+        if (err) {
+          console.error(err)
+        }
+        pm2.disconnect()
+      })
+    })
+  }
+}
+
 export class LogCommand implements yargs.CommandModule {
   command = 'log <instance>'
   describe = 'Prints the log of the instance'
