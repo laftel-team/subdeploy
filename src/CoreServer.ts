@@ -48,7 +48,9 @@ class CoreServer {
       connection.socket.on('message', (message) => {
         const parsed = message.toString()
         if (parsed === 'ping') {
+          log(`${req.ip} >> PING`)
           connection.socket.send('pong')
+          log(`PONG >> ${req.ip}`)
         } else if (parsed.startsWith('authorize/')) {
           const key = parsed.split('/')[1]
           if (key === this.config.key) {

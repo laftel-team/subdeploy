@@ -10,6 +10,9 @@ const scriptsDir = path.resolve(pwd, './deploy-scripts')
 class Client {
   private ws!: WebSocket
   private scripts: string[] = []
+
+  private intervalId: ReturnType<typeof setInterval> | undefined
+
   constructor(private readonly config: { address: string; key: string }) {
     this.loadScripts()
   }
@@ -17,6 +20,22 @@ class Client {
   connect() {
     this.ws = new WebSocket(this.config.address)
     this.setup()
+  }
+
+  private ping() {
+    log('PING >>')
+    this.ws.send('ping')
+  }
+
+  private startPingTimer() {
+    this.intervalId = setInterval(() => this.ping(), 10000)
+  }
+
+  private stopPingTimer() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId)
+      this.intervalId = undefined
+    }
   }
 
   private loadScripts() {
@@ -28,12 +47,15 @@ class Client {
   private setup() {
     this.ws.on('open', () => {
       this.ws.send(`authorize/${this.config.key}`)
+      this.startPingTimer()
     })
     this.ws.on('message', (data) => {
       const parsed = data.toString()
 
       if (parsed === 'ping') {
         this.ws.send('pong')
+      } else if (parsed === 'pong') {
+        log('<< PONG')
       } else if (parsed === 'authorized') {
         log('Authorized successfully')
       } else if (parsed === 'unauthorized') {
@@ -49,6 +71,7 @@ class Client {
     this.ws.on('close', () => {
       log('Connection closed, reconnecting...')
       setTimeout(() => this.connect(), 1000)
+      this.stopPingTimer()
     })
 
     this.ws.on('error', () => {
