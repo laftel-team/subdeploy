@@ -8,6 +8,7 @@ import {
   StatusCommand,
   StopCommand,
   RestartCommand,
+  ExecCommand,
 } from './commands'
 import dotenv from 'dotenv'
 import path from 'path'
@@ -21,6 +22,7 @@ yargs(process.argv.slice(2))
   .command(new RestartCommand())
   .command(new LogCommand())
   .command(new InvokeCommand())
+  .command(new ExecCommand())
   .command(new StatusCommand())
   .demandCommand(1)
   .strict()

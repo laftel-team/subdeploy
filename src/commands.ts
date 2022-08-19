@@ -221,3 +221,28 @@ export class InvokeCommand implements yargs.CommandModule {
     }
   }
 }
+
+export class ExecCommand implements yargs.CommandModule {
+  command = 'exec'
+  describe = 'Execute shell scripts'
+
+  builder(args: yargs.Argv) {
+    return args
+      .option('e', {
+        alias: 'exec',
+        demandOption: true,
+        describe: 'Shell scripts to execute.',
+        type: 'string'
+      })
+      .example(`$0 exec --exec 'git fetch --all && git switch main && yarn build && yarn deploy'`, 'Execute shell scripts.')
+  }
+
+  async handler(args: yargs.Arguments) {
+    const exec = args.exec as string
+    try {
+      childProcess.execSync(exec)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
