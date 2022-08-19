@@ -194,6 +194,12 @@ export class InvokeCommand implements yargs.CommandModule {
 
   builder(args: yargs.Argv) {
     return args
+      .option('b', {
+        alias: 'branch',
+        demandOption: false,
+        describe: 'The name of target branch. Automatically switch to target branch if this option will be provided.',
+        type: 'string',
+      })
       .positional('script', {
         describe:
           'The name of the script to run, the script file must exist in deploy-scripts directory',
@@ -205,10 +211,11 @@ export class InvokeCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments) {
     const { SUBDEPLOY_PORT, SUBDEPLOY_HOST, SUBDEPLOY_KEY } = process.env
     const script = args.script as string
+    const branch = args.branch as string | undefined
     const url = `http://${SUBDEPLOY_HOST}:${SUBDEPLOY_PORT}/exec`
     try {
       const { data } = await axios.post(url, null, {
-        params: { key: SUBDEPLOY_KEY, command: script },
+        params: { key: SUBDEPLOY_KEY, command: script, targetBranch: branch },
         headers: {
           'Content-Type': 'application/json',
         },

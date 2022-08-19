@@ -1,6 +1,8 @@
 import Fastify from 'fastify'
 import fastifyWebsocket from 'fastify-websocket'
 import { WebSocket } from 'ws'
+import generateWebSocketData from './lib/generateWebSocketData'
+import parseWebSocketData from './lib/parseWebSocketData'
 import { log } from './log'
 
 type CoreServerConfig = {
@@ -11,6 +13,7 @@ type CoreServerConfig = {
 type ExecQuerystring = {
   key: string
   command: string
+  targetBranch?: string
 }
 
 class CoreServer {
@@ -18,9 +21,9 @@ class CoreServer {
 
   sockets = new Set<WebSocket>()
 
-  broadcast(message: string) {
+  broadcast(data: { command: string, targetBranch?: string }) {
     this.sockets.forEach((socket) => {
-      socket.send(message)
+      socket.send(generateWebSocketData(data))
     })
   }
 
@@ -28,14 +31,18 @@ class CoreServer {
     this.app.post<{ Querystring: ExecQuerystring }>(
       '/exec',
       async (request, reply) => {
-        if (request.query.key !== this.config.key) {
+        const { key, command, targetBranch } = request.query
+        if (key !== this.config.key) {
           reply.code(401)
           throw new Error('Invalid key')
         }
 
-        log(`Broadcast command: ${request.query.command}`)
+        log(`Broadcast command: ${command}`)
+        if (targetBranch) {
+          log(`Target branch: ${targetBranch}`)
+        }
 
-        this.broadcast(request.query.command)
+        this.broadcast({ command, targetBranch })
 
         return {
           status: 'ok',
@@ -45,20 +52,26 @@ class CoreServer {
 
     this.app.get('/websocket', { websocket: true }, (connection, req) => {
       this.sockets.add(connection.socket)
-      connection.socket.on('message', (message) => {
-        const parsed = message.toString()
-        if (parsed === 'ping') {
+      connection.socket.on('message', (data) => {
+        const { command } = parseWebSocketData(data)
+        if (command === 'ping') {
           log(`${req.ip} >> PING`)
-          connection.socket.send('pong')
+          connection.socket.send(generateWebSocketData({
+            command: 'pong'
+          }))
           log(`PONG >> ${req.ip}`)
-        } else if (parsed.startsWith('authorize/')) {
-          const key = parsed.split('/')[1]
+        } else if (command.startsWith('authorize/')) {
+          const key = command.split('/')[1]
           if (key === this.config.key) {
             log(`${req.ip} is authorized`)
-            connection.socket.send('authorized')
+            connection.socket.send(generateWebSocketData({
+              command: 'authorized'
+            }))
             this.sockets.add(connection.socket)
           } else {
-            connection.socket.send('unauthorized')
+            connection.socket.send(generateWebSocketData({
+              command: 'unauthorized'
+            }))
           }
         }
       })

@@ -3,6 +3,9 @@ import fs from 'fs'
 import path from 'path'
 import childProcess from 'child_process'
 import { log } from './log'
+import gitSwitch from './lib/gitSwitch'
+import generateWebSocketData from './lib/generateWebSocketData'
+import parseWebSocketData from './lib/parseWebSocketData'
 
 const pwd = process.cwd()
 const scriptsDir = path.resolve(pwd, './deploy-scripts')
@@ -24,7 +27,9 @@ class Client {
 
   private ping() {
     log('PING >>')
-    this.ws.send('ping')
+    this.ws.send(generateWebSocketData({
+      command: 'ping'
+    }))
   }
 
   private startPingTimer() {
@@ -46,24 +51,28 @@ class Client {
 
   private setup() {
     this.ws.on('open', () => {
-      this.ws.send(`authorize/${this.config.key}`)
+      this.ws.send(generateWebSocketData({
+        command: `authorize/${this.config.key}`,
+      }))
       this.startPingTimer()
     })
     this.ws.on('message', (data) => {
-      const parsed = data.toString()
+      const { command, targetBranch } = parseWebSocketData(data)
 
-      if (parsed === 'ping') {
-        this.ws.send('pong')
-      } else if (parsed === 'pong') {
+      if (command === 'ping') {
+        this.ws.send(generateWebSocketData({
+          command: 'pong'
+        }))
+      } else if (command === 'pong') {
         log('<< PONG')
-      } else if (parsed === 'authorized') {
+      } else if (command === 'authorized') {
         log('Authorized successfully')
-      } else if (parsed === 'unauthorized') {
+      } else if (command === 'unauthorized') {
         log('Failed to authorize')
-      } else if (!this.scripts.includes(parsed)) {
-        log(`Unknown script: ${parsed}`)
+      } else if (!this.scripts.includes(command)) {
+        log(`Unknown script: ${command}`)
       } else {
-        this.execScript(parsed)
+        this.execScript(command, targetBranch)
       }
     })
 
@@ -79,8 +88,13 @@ class Client {
     })
   }
 
-  private execScript(script: string) {
+  private execScript(script: string, targetBranch?: string) {
     log(`Executing script: ${script}`)
+    if (targetBranch) {
+      log(`Git fetch all and switching to ${targetBranch}`)
+      gitSwitch(targetBranch)
+      log(`Finished git fetch all and switching to ${targetBranch}. Now current branch is ${targetBranch}`)
+    }
     const scriptDir = path.resolve(scriptsDir, script)
     const child = childProcess.spawn(scriptDir)
     child.stdout.on('data', (data) => {
