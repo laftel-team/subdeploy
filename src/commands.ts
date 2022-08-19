@@ -228,19 +228,27 @@ export class ExecCommand implements yargs.CommandModule {
 
   builder(args: yargs.Argv) {
     return args
-      .option('e', {
-        alias: 'exec',
+      .option('s', {
+        alias: 'script',
         demandOption: true,
         describe: 'Shell scripts to execute.',
         type: 'string'
       })
-      .example(`$0 exec --exec 'git fetch --all && git switch main && yarn build && yarn deploy'`, 'Execute shell scripts.')
+      .example(`$0 exec --script 'git fetch --all && git switch main && yarn build && yarn deploy'`, 'Execute shell scripts.')
   }
 
   async handler(args: yargs.Arguments) {
-    const exec = args.exec as string
+    const { SUBDEPLOY_PORT, SUBDEPLOY_HOST, SUBDEPLOY_KEY } = process.env
+    const script = args.script as string
+    const url = `http://${SUBDEPLOY_HOST}:${SUBDEPLOY_PORT}/exec`
     try {
-      childProcess.execSync(exec)
+      const { data } = await axios.post(url, null, {
+        params: { key: SUBDEPLOY_KEY, command: script },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      console.log(data)
     } catch (e) {
       console.error(e)
     }

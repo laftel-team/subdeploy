@@ -61,9 +61,9 @@ class Client {
       } else if (parsed === 'unauthorized') {
         log('Failed to authorize')
       } else if (!this.scripts.includes(parsed)) {
-        log(`Unknown script: ${parsed}`)
-      } else {
         this.execScript(parsed)
+      } else {
+        this.execPredefinedScript(parsed)
       }
     })
 
@@ -79,7 +79,7 @@ class Client {
     })
   }
 
-  private execScript(script: string) {
+  private execPredefinedScript(script: string) {
     log(`Executing script: ${script}`)
     const scriptDir = path.resolve(scriptsDir, script)
     const child = childProcess.spawn(scriptDir)
@@ -97,6 +97,12 @@ class Client {
       }
       log(`Script ${script} failed`)
     })
+  }
+
+  private execScript(script: string) {
+    log(`Executing script: ${script}`)
+    const result = childProcess.execSync(script)
+    log(result.toString())
   }
 }
 
