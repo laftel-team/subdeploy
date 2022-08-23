@@ -27,7 +27,7 @@
   "scripts": {
     "dev:core": "ts-node -T ./src/index.core.ts",
     "dev:client": "ts-node -T ./src/index.client.ts",
-    "build": "rm -rf && tsc",
+    "build": "rm -rf dist && tsc",
     "prepublish": "yarn build"
   },
   "bin": {
