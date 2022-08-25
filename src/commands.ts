@@ -3,7 +3,8 @@ import yargs from 'yargs'
 import path from 'path'
 import childProcess from 'child_process'
 import { getBorderCharacters, table } from 'table'
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosResponse } from 'axios'
+import { ExecBody, ExecQuerystring, ExecResponse } from './types/Exec'
 
 export class StartCommand implements yargs.CommandModule {
   command = 'start <instance>'
@@ -194,6 +195,12 @@ export class InvokeCommand implements yargs.CommandModule {
 
   builder(args: yargs.Argv) {
     return args
+      .option('b', {
+        alias: 'branch',
+        type: 'string',
+        describe: 'The specific branch name to provide by option',
+        demandOption: false,
+      })
       .positional('script', {
         describe:
           'The name of the script to run, the script file must exist in deploy-scripts directory',
@@ -205,14 +212,27 @@ export class InvokeCommand implements yargs.CommandModule {
   async handler(args: yargs.Arguments) {
     const { SUBDEPLOY_PORT, SUBDEPLOY_HOST, SUBDEPLOY_KEY } = process.env
     const script = args.script as string
+    const branch = args.branch as string | undefined
     const url = `http://${SUBDEPLOY_HOST}:${SUBDEPLOY_PORT}/exec`
     try {
-      const { data } = await axios.post(url, null, {
-        params: { key: SUBDEPLOY_KEY, command: script },
-        headers: {
-          'Content-Type': 'application/json',
+      const { data } = await axios.post<
+        ExecResponse,
+        AxiosResponse<ExecResponse>,
+        ExecBody
+      >(
+        url,
+        {
+          options: {
+            branch,
+          },
         },
-      })
+        {
+          params: { key: SUBDEPLOY_KEY, command: script } as ExecQuerystring,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      )
       console.log(data)
     } catch (e) {
       if (axios.isAxiosError(e)) {

@@ -3,6 +3,8 @@ import fs from 'fs'
 import path from 'path'
 import childProcess from 'child_process'
 import { log } from './log'
+import { Message } from './types/Message'
+import generateBufferedMessage from './lib/generateBufferedMessage'
 
 const pwd = process.cwd()
 const scriptsDir = path.resolve(pwd, './deploy-scripts')
@@ -24,7 +26,11 @@ class Client {
 
   private ping() {
     log('PING >>')
-    this.ws.send('ping')
+    this.ws.send(
+      generateBufferedMessage({
+        type: 'ping',
+      })
+    )
   }
 
   private startPingTimer() {
@@ -46,24 +52,34 @@ class Client {
 
   private setup() {
     this.ws.on('open', () => {
-      this.ws.send(`authorize/${this.config.key}`)
+      this.ws.send(
+        generateBufferedMessage({
+          type: 'authorize',
+          key: this.config.key,
+        })
+      )
       this.startPingTimer()
     })
-    this.ws.on('message', (data) => {
-      const parsed = data.toString()
-
-      if (parsed === 'ping') {
-        this.ws.send('pong')
-      } else if (parsed === 'pong') {
-        log('<< PONG')
-      } else if (parsed === 'authorized') {
-        log('Authorized successfully')
-      } else if (parsed === 'unauthorized') {
-        log('Failed to authorize')
-      } else if (!this.scripts.includes(parsed)) {
-        log(`Unknown script: ${parsed}`)
-      } else {
-        this.execScript(parsed)
+    this.ws.on('message', (message) => {
+      const stringified = message.toString()
+      try {
+        const parsed = JSON.parse(stringified) as Message
+        const { type, options } = parsed
+        if (type === 'ping') {
+          this.ws.send(generateBufferedMessage({ type: 'pong' }))
+        } else if (type === 'pong') {
+          log('<< PONG')
+        } else if (type === 'authorized') {
+          log('Authorized successfully')
+        } else if (type === 'unauthorized') {
+          log('Failed to authorize')
+        } else if (!this.scripts.includes(type)) {
+          log(`Unknown script: ${type}`)
+        } else {
+          this.execScript({ type, options })
+        }
+      } catch (e) {
+        console.error(e)
       }
     })
 
@@ -79,10 +95,18 @@ class Client {
     })
   }
 
-  private execScript(script: string) {
-    log(`Executing script: ${script}`)
-    const scriptDir = path.resolve(scriptsDir, script)
-    const child = childProcess.spawn(scriptDir)
+  private execScript({ type, options }: Message) {
+    log(`Executing script: ${type}`)
+    const scriptDir = path.resolve(scriptsDir, type)
+    let cmdOptions: string[] = []
+    if (options) {
+      const { branch } = options
+      if (branch) {
+        cmdOptions.push('--branch')
+        cmdOptions.push(branch)
+      }
+    }
+    const child = childProcess.spawn(scriptDir, cmdOptions)
     child.stdout.on('data', (data) => {
       console.log(data.toString())
     })
@@ -92,10 +116,10 @@ class Client {
 
     child.on('exit', (code) => {
       if (code === 0) {
-        log(`Successfully executed script: ${script}`)
+        log(`Successfully executed script: ${type}`)
         return
       }
-      log(`Script ${script} failed`)
+      log(`Script ${type} failed`)
     })
   }
 }
