@@ -1,6 +1,6 @@
 {
   "name": "subdeploy",
-  "version": "1.0.4",
+  "version": "1.0.8",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
@@ -27,7 +27,7 @@
   "scripts": {
     "dev:core": "ts-node -T ./src/index.core.ts",
     "dev:client": "ts-node -T ./src/index.client.ts",
-    "build": "tsc"
+    "build": "rm -rf dist && tsc"
   },
   "bin": {
     "subdeploy": "./dist/cli.js"
